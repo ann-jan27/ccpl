@@ -39,7 +39,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/exekiel179/ccpl-app
+            ghcr.io/ann-jan27/ccpl-app
             ${{ secrets.DOCKERHUB_USERNAME != '' && (secrets.DOCKERHUB_REPO || format('{0}/ccpl-app', secrets.DOCKERHUB_USERNAME)) || '' }}
           tags: |
             type=ref,event=branch
