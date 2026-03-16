@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>后台管理 · ccpl信息收集系统</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f5f5f3; color: #1a1a1a; font-size: 15px; line-height: 1.6; }
+
+  /* 登录页 */
+  .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+  .login-box { background: #fff; border: 1px solid #e8e8e6; border-radius: 14px; padding: 2.5rem; width: 100%; max-width: 380px; }
+  .login-box h2 { font-size: 20px; font-weight: 600; margin-bottom: 6px; }
+  .login-box p { font-size: 13px; color: #888; margin-bottom: 1.5rem; }
+  .login-box input { width: 100%; font-family: inherit; font-size: 14px; background: #fafafa; border: 1px solid #ddd; border-radius: 8px; padding: 10px 12px; outline: none; margin-bottom: 12px; transition: border-color .15s; }
+  .login-box input:focus { border-color: #378add; }
+  .login-box button { width: 100%; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; padding: 11px; font-size: 15px; font-weight: 500; cursor: pointer; font-family: inherit; transition: opacity .15s; }
+  .login-box button:hover { opacity: .82; }
+  .login-err { font-size: 13px; color: #e24b4a; margin-top: 8px; min-height: 20px; }
+
+  /* 主界面 */
+  #admin-page { display: none; }
+  .topbar { background: #fff; border-bottom: 1px solid #e8e8e6; padding: 0 1.5rem; height: 54px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  .topbar h1 { font-size: 16px; font-weight: 600; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .count-badge { font-size: 13px; color: #666; background: #f0f0ee; border-radius: 20px; padding: 3px 12px; }
+  .export-btn { font-size: 13px; color: #185fa5; background: #e6f1fb; border: 1px solid #b5d4f4; border-radius: 8px; padding: 5px 14px; cursor: pointer; transition: opacity .15s; }
+  .export-btn:hover { opacity: .8; }
+  .clear-btn { font-size: 13px; color: #e24b4a; background: #fff0f0; border: 1px solid #f09595; border-radius: 8px; padding: 5px 14px; cursor: pointer; transition: opacity .15s; }
+  .clear-btn:hover { opacity: .8; }
+  .logout-btn { font-size: 13px; color: #888; background: none; border: 1px solid #ddd; border-radius: 8px; padding: 5px 14px; cursor: pointer; }
+
+  .content { max-width: 900px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+  .empty { text-align: center; padding: 4rem 1rem; color: #aaa; font-size: 14px; }
+
+  .card { background: #fff; border: 1px solid #e8e8e6; border-radius: 12px; margin-bottom: 1rem; overflow: hidden; }
+  .card-head { display: flex; align-items: center; gap: 14px; padding: 1rem 1.25rem; cursor: pointer; transition: background .1s; }
+  .card-head:hover { background: #fafafa; }
+  .avatar { width: 46px; height: 46px; border-radius: 50%; object-fit: cover; flex-shrink: 0; border: 1px solid #eee; }
+  .avatar-init { width: 46px; height: 46px; border-radius: 50%; background: #e6f1fb; display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 600; color: #185fa5; flex-shrink: 0; }
+  .card-meta { flex: 1; min-width: 0; }
+  .card-meta h3 { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+  .card-meta p { font-size: 13px; color: #888; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .badge { font-size: 12px; padding: 3px 10px; border-radius: 20px; font-weight: 500; }
+  .badge-m { background: #e6f1fb; color: #185fa5; }
+  .badge-d { background: #faeeda; color: #854f0b; }
+  .badge-p { background: #e1f5ee; color: #0f6e56; }
+  .chevron { width: 18px; height: 18px; color: #bbb; transition: transform .2s; flex-shrink: 0; }
+  .chevron.open { transform: rotate(180deg); }
+
+  .card-body { border-top: 1px solid #f0f0ee; padding: 1.5rem 1.25rem; display: none; }
+  .card-body.open { display: block; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; margin-bottom: 1.25rem; }
+  @media (max-width: 540px) { .detail-grid { grid-template-columns: 1fr; } }
+  .dfield dt { font-size: 12px; color: #aaa; margin-bottom: 3px; letter-spacing: .03em; }
+  .dfield dd { font-size: 14px; color: #1a1a1a; line-height: 1.6; }
+  .divider { border: none; border-top: 1px solid #f0f0ee; margin: 1.25rem 0; }
+  .paper-list { list-style: decimal; padding-left: 1.2rem; }
+  .paper-list li { font-size: 13px; color: #555; margin-bottom: 6px; line-height: 1.6; font-family: monospace; }
+  .photo-thumb { width: 80px; border-radius: 8px; border: 1px solid #eee; display: block; }
+  .card-footer { display: flex; align-items: center; justify-content: space-between; margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #f0f0ee; }
+  .time-label { font-size: 12px; color: #bbb; }
+  .del-btn { font-size: 13px; color: #e24b4a; background: #fff0f0; border: 1px solid #f09595; border-radius: 8px; padding: 5px 14px; cursor: pointer; transition: opacity .15s; }
+  .del-btn:hover { opacity: .8; }
+</style>
+</head>
+<body>
+
+<!-- 登录页 -->
+<div class="login-wrap" id="login-page">
+  <div class="login-box">
+    <h2>管理员登录</h2>
+    <p>请输入密码以访问后台管理</p>
+    <input type="password" id="pwd-input" placeholder="请输入密码" onkeydown="if(event.key==='Enter')doLogin()" />
+    <button onclick="doLogin()">登录</button>
+    <div class="login-err" id="login-err"></div>
+  </div>
+</div>
+
+<!-- 主界面 -->
+<div id="admin-page">
+  <div class="topbar">
+    <h1>ccpl信息收集系统 · 后台管理</h1>
+    <div class="topbar-right">
+      <span class="count-badge" id="count-badge">0 条记录</span>
+      <button class="export-btn" onclick="exportCSV()">导出 CSV</button>
+      <button class="clear-btn" onclick="clearAll()">清空数据</button>
+      <button class="logout-btn" onclick="logout()">退出</button>
+    </div>
+  </div>
+  <div class="content">
+    <div id="list"></div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PWD = 'lab2024';
+
+function doLogin() {
+  const val = document.getElementById('pwd-input').value;
+  if (val === ADMIN_PWD) {
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('admin-page').style.display = 'block';
+    renderList();
+  } else {
+    document.getElementById('login-err').textContent = '密码错误，请重试';
+  }
+}
+
+function logout() {
+  document.getElementById('admin-page').style.display = 'none';
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('pwd-input').value = '';
+  document.getElementById('login-err').textContent = '';
+}
+
+async function getData() {
+  try {
+    const resp = await fetch('/api/submissions');
+    return await resp.json();
+  } catch(e) {
+    console.error(e);
+    return [];
+  }
+}
+
+async function renderList() {
+  const data = await getData();
+  const listEl = document.getElementById('list');
+  document.getElementById('count-badge').textContent = data.length + ' 条记录';
+  if (!data.length) {
+    listEl.innerHTML = '<div class="empty">暂无提交记录</div>'; return;
+  }
+  listEl.innerHTML = '';
+  data.forEach((r, i) => {
+    const badgeClass = r.degree === '硕士研究生' ? 'badge-m' : r.degree === '博士研究生' ? 'badge-d' : 'badge-p';
+    const initials = r.name ? r.name.slice(-2) : '?';
+    const avatarHtml = r.photo
+      ? '<img class="avatar" src="' + r.photo + '" />'
+      : '<div class="avatar-init">' + initials + '</div>';
+    const papersHtml = r.papers && r.papers.length
+      ? '<ol class="paper-list">' + r.papers.map(p => '<li>' + escHtml(p) + '</li>').join('') + '</ol>'
+      : '<span style="font-size:13px;color:#bbb">暂无</span>';
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML =
+      '<div class="card-head" onclick="toggle(this)">' +
+        avatarHtml +
+        '<div class="card-meta">' +
+          '<h3>' + escHtml(r.name) + '</h3>' +
+          '<p>' + escHtml(r.email) + ' · ' + r.year + '级 · ' + escHtml(r.school || '') + '</p>' +
+        '</div>' +
+        '<div class="card-right">' +
+          '<span class="badge ' + badgeClass + '">' + escHtml(r.degree) + '</span>' +
+          '<svg class="chevron" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7l5 5 5-5"/></svg>' +
+        '</div>' +
+      '</div>' +
+      '<div class="card-body">' +
+        '<div class="detail-grid">' +
+          (r.photo ? '<div class="dfield"><dt>证件照</dt><dd><img class="photo-thumb" src="' + r.photo + '" /></dd></div>' : '') +
+          '<div class="dfield"><dt>邮箱</dt><dd>' + escHtml(r.email) + '</dd></div>' +
+          '<div class="dfield"><dt>本科院校</dt><dd>' + escHtml(r.school || '') + '</dd></div>' +
+          '<div class="dfield"><dt>本科专业</dt><dd>' + escHtml(r.major || '') + '</dd></div>' +
+          (r.masterSchool ? '<div class="dfield"><dt>硕士院校</dt><dd>' + escHtml(r.masterSchool) + '</dd></div>' : '') +
+          (r.masterMajor ? '<div class="dfield"><dt>硕士专业</dt><dd>' + escHtml(r.masterMajor) + '</dd></div>' : '') +
+        '</div>' +
+        '<div class="dfield"><dt>硕士/博士研究方向</dt><dd>' + escHtml(r.research) + '</dd></div>' +
+        '<hr class="divider" />' +
+        '<div class="dfield"><dt>论文成果</dt><dd style="margin-top:4px">' + papersHtml + '</dd></div>' +
+        (r.awards ? '<div class="dfield" style="margin-top:1rem"><dt>获奖情况</dt><dd style="white-space:pre-line">' + escHtml(r.awards) + '</dd></div>' : '') +
+        (r.links ? '<div class="dfield" style="margin-top:1rem"><dt>在线系统链接</dt><dd style="font-family:monospace;font-size:13px;word-break:break-all">' + escHtml(r.links) + '</dd></div>' : '') +
+        (r.linkDesc ? '<div class="dfield" style="margin-top:.5rem"><dt>系统说明</dt><dd>' + escHtml(r.linkDesc) + '</dd></div>' : '') +
+        '<div class="card-footer">' +
+          '<span class="time-label">提交时间：' + r.submittedAt + '</span>' +
+          '<button class="del-btn" onclick="deleteRecord(' + r.db_id + ')">删除此条</button>' +
+        '</div>' +
+      '</div>';
+    listEl.appendChild(card);
+  });
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toggle(head) {
+  const body = head.nextElementSibling;
+  const chev = head.querySelector('.chevron');
+  body.classList.toggle('open');
+  chev.classList.toggle('open');
+}
+
+async function deleteRecord(db_id) {
+  if (!confirm('确认删除该条记录？')) return;
+  await fetch('/api/submissions/' + db_id, { method: 'DELETE' });
+  renderList();
+}
+
+async function clearAll() {
+  if (!confirm('确认清空所有提交记录？此操作不可撤销。')) return;
+  await fetch('/api/clear', { method: 'POST' });
+  renderList();
+}
+
+async function exportCSV() {
+  const data = await getData();
+  if (!data.length) { alert('暂无数据'); return; }
+  const headers = ['姓名','邮箱','入学年份','学位类型','本科院校','本科专业','研究方向','论文成果','获奖情况','在线系统链接','系统说明','提交时间','证件照','硕士院校','硕士专业'];
+  const rows = data.map(r => [
+    r.name, r.email, r.year, r.degree, r.school, r.major, r.research,
+    (r.papers || []).join(' | '), r.awards, r.links, r.linkDesc, r.submittedAt,
+    r.photo ? '（已上传，请在后台查看）' : '（未上传）',
+    r.masterSchool, r.masterMajor
+  ].map(v => '"' + String(v || '').replace(/"/g, '""') + '"'));
+  const csv = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'ccpl信息收集系统_' + new Date().toLocaleDateString('zh-CN').replace(/\//g,'-') + '.csv';
+  a.click();
+}
+</script>
+</body>
+</html>

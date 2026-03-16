@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: lab-member-system
+    ports:
+      - "${PORT:-8080}:80"
+    restart: unless-stopped
+    volumes:
+      # 挂载数据目录，持久化 SQLite 数据库
+      - ./data:/app/data
+    environment:
+      - TZ=Asia/Shanghai
+    labels:
+      - "com.example.description=ccplccpl信息收集系统"
