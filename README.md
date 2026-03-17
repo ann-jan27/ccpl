@@ -38,7 +38,7 @@ docker-compose up -d
 
 4. 访问系统：
    - **填写页**：`http://localhost:8080/`
-   - **管理后台**：`http://localhost:8080/admin` (默认密码：`lab2024`)
+   - **管理后台**：`http://localhost:8080/admin` 
 
 ### 方式二：直接拉取镜像运行
 
